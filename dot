@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+if [[ "$(docker images -q geraldvillorente/dq:v0.1 2> /dev/null)" == "" ]]; then
+  echo "Pulling the Docker image from the Docker registry..."
+  docker pull geraldvillorente/dq:v0.1
+fi
+
+# Make sure the Docker container is running
+if [ ! "$(docker ps -q -f name=dq)" ]; then
+    if [ "$(docker ps -aq -f status=exited -f name=dq)" ]; then
+        # Cleanup
+        docker rm dq
+    fi
+    # Run dq container
+    docker run --name dq --detach -itp 531:53 -p 531:53/UDP geraldvillorente/dq:v0.1 &>/dev/null
+fi
+
+# Run dig command
+dig $1 @127.0.0.1 -p 531
+
+# Stop and remove the container
+sleep 1s
+docker stop dq &>/dev/null
+docker rm dq &>/dev/null
